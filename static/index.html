@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src=""></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <title>每日总结</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/search_style.css">
+</head>
+
+<body class="font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-4xl font-bold text-white text-center mb-8">每日总结</h1>
+        <div class="flex justify-center mb-8">
+            <input type="text" id="title" placeholder="总结标题"
+                class="p-3 border border-gray-300 rounded-l-lg input-field focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <textarea id="content" placeholder="总结内容"
+                class="p-3 border border-gray-300 input-field focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+            <button id="add-summary"
+                class="bg-blue-500 text-white p-3 rounded-r-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">添加总结</button>
+        </div>
+        <div class="max-w-2xl mx-auto mb-8 px-4">
+            <div class="bg-gray-50 rounded-xl p-6 shadow-lg transition-shadow hover:shadow-xl">
+                <div class="mb-5">
+                    <h3 class="text-base font-semibold text-blue-600 mb-2">记录点滴生活（最多5张）</h3>
+                    <!-- 相对定位容器：作为重叠区域的基础 -->
+                    <div class="relative border-2 border-dashed border-blue-200 rounded-lg hover:border-blue-300 transition-colors focus-within:ring-2 focus-within:ring-blue-100 focus-within:ring-opacity-50 min-h-[100px]">
+                        <!-- input绝对定位占满容器，透明覆盖 -->
+                        <input type="file" id="image-upload" accept="image/*" multiple 
+                            class="absolute inset-0 opacity-0 cursor-pointer z-10" 
+                            max="5">
+                        <!-- 提示内容层：自然叠在input上方 -->
+                        <div class="p-4 flex items-center justify-center pointer-events-none">
+                            <i class="fas fa-cloud-upload-alt text-blue-400 mr-3"></i>
+                            <span class="text-sm text-gray-500">点击上传或拖拽图片</span>
+                            <span class="text-xs text-gray-400 ml-2">（支持JPG/PNG/GIF，单张≤5MB）</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- 图片预览区域 -->
+                <div id="image-preview" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            </div>
+        </div>
+        
+        <div class="relative flex flex-col gap-4 w-full">
+            <!-- 搜索输入容器 -->
+            <div class="flex items-center gap-2 w-full">
+                <!-- 时间选择图标 -->
+                <button id="dateTrigger" class="p-3 bg-white rounded-lg text-gray-600 hover:bg-gray-100 transition-colors shadow-sm">
+                    <i class="fa-regular fa-calendar-days text-lg"></i>
+                </button>
+                
+                <!-- 输入框主体 -->
+                <input type="text" id="contentInput" placeholder="输入搜索内容" 
+                    class="flex-1 p-3 border border-gray-200 focus:border-blue-500 focus:ring-blue-500 focus:ring-1 rounded-lg outline-none transition-all shadow-sm">
+                
+                <!-- 搜索按钮 -->
+                <button id="searchBtn" class="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-sm">
+                    搜索
+                </button>
+            </div>
+    
+            <!-- 日期选择器（左右时间输入） -->
+            <div class="date-picker mt-2 bg-white rounded-lg shadow-lg p-4" id="datePicker">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <!-- 起始时间输入 -->
+                    <div class="flex-1 relative">
+                        <label for="startTime" class="text-sm text-gray-500 mb-1 block">起始时间（大于）</label>
+                        <input type="date" id="startTime" 
+                            class="p-3 w-full border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 focus:ring-1 outline-none transition-all">
+                    </div>
+                    
+                    <!-- 结束时间输入 -->
+                    <div class="flex-1 relative">
+                        <label for="endTime" class="text-sm text-gray-500 mb-1 block">结束时间（小于）</label>
+                        <input type="date" id="endTime" 
+                            class="p-3 w-full border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-blue-500 focus:ring-1 outline-none transition-all">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="timeline" class="relative space-y-16">
+            <!-- 总结将在这里显示 -->
+        </div>
+    </div>
+
+    <!-- 侧边栏 -->
+     <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="text-xl font-bold text-black">
+                <button id="close-sidebar" class="text-white hover:text-gray-300">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </h2>
+        </div>
+        <div id="search-results">
+
+        </div>
+     </div>
+
+    <div id="content-fullscreen" class="fullscreen hidden">
+        <textarea id="fullscreen-content" class="w-full h-full p-3 border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 "></textarea>
+        <button id="exit-fullscreen"
+            class="bg-red-500 text-white p-3 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">退出全屏</button>
+    </div>
+
+    <div id="confirm-modal" class="confirm-modal">
+        <p>是否保存输入内容？</p>
+        <button id="confirm-save"
+            class="bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">保存</button>
+        <button id="cancel-save"
+            class="bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50">取消</button>
+    </div>
+
+    <div id="modal" class="fixed top-0 left-0 w-full h-full bg-gray-900 bg-opacity-50 hidden justify-center items-center">
+        <div class="bg-white p-8 rounded-lg w-3/4 md:w-1/2 shadow-lg max-h-[80vh] overflow-y-auto">
+            <h2 id="modal-title" class="text-3xl font-bold mb-4"></h2>
+            <p id="modal-time" class="text-gray-600 mb-6"></p>
+            <p id="modal-content"></p>
+            <div id="img-modal" class="flex flex-col md:flex-row gap-6">
+
+            </div>
+            
+            <button id="close-modal" 
+                class="bg-red-500 text-white p-3 rounded-lg mt-6 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50">关闭</button>
+        </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+        <div class="relative max-w-4xl mx-auto p-4">
+            <img id="modal-image" class="max-h-[90vh] max-w-full object-contain" src="" alt="预览图片">
+            <button id="close-modal-pre-pic" class="absolute top-2 right-2 text-white hover:text-gray-300 focus:outline-none">
+                <i class="fas fa-times text-2xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 确保脚本在body最后加载 -->
+    <script type="module" src="/static/config.js"></script>
+    <script type="module" src="/static/utils.js"></script>
+    <script type="module" src="/static/content.js"></script>
+    <script type="module" src="/static/checkContent.js"></script>
+    <script type="module" src="/static/search.js"></script>
+    <script type="module" src="/static/index.js"></script>
+</body>
+
+</html>

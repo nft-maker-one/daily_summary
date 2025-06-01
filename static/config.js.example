@@ -1,0 +1,18 @@
+
+const config = {
+    // API基础URL
+    apiBaseUrl: 'http://localhost:8081', 
+
+    // API端点
+    endpoints: {
+        getSummaries: '/get',
+        addSummary: '/add',
+    },
+
+    getApiUrl: function(endpoint) {
+        return `${this.apiBaseUrl}${this.endpoints[endpoint]}`;
+    }
+};
+
+
+export default config; 
