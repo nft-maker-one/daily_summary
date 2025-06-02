@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>周密计划</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <base href="/">
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOutDown {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(20px); }
+    }
+    .modal-enter { animation: fadeInUp 0.3s ease-out forwards; }
+    .modal-exit { animation: fadeOutDown 0.3s ease-out forwards; }
+    .backdrop { backdrop-filter: blur(4px); }
+    .toast { animation: fadeInUp 0.3s ease-out, fadeOutDown 0.3s ease-out 2.7s; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 antialiased">
+  <nav class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i class="fas fa-book-open text-2xl"></i>
+        <span class="text-xl font-bold">每日总结</span>
+      </div>
+      <div class="flex space-x-6">
+        <a href="static/index.html" class="hover:text-blue-200 transition-colors duration-300 font-medium">生活总结</a>
+        <a href="static/planlist.html" class="hover:text-blue-200 transition-colors duration-300 font-medium">周密计划</a>
+        <a href="static/reminders.html" class="hover:text-blue-200 transition-colors duration-300 font-medium">提醒设置</a>
+        <div class="relative group">
+          <button id="login-btn" class="hover:text-blue-200 transition-colors duration-300 font-medium flex items-center">
+            个人中心
+            <i class="fas fa-chevron-down ml-2"></i>
+          </button>
+          <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-lg mt-2 w-48 z-10">
+            <a href="#" class="block px-4 py-2 hover:bg-blue-100 transition-colors">个人资料</a>
+            <a href="#" class="block px-4 py-2 hover:bg-blue-100 transition-colors">设置</a>
+            <a href="#" class="block px-4 py-2 hover:bg-blue-100 transition-colors">退出</a>
+          </div>
+        </div>
+        <span id="user-greeting" class="hidden font-medium text-blue-100"></span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto p-6 max-w-5xl">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">周密计划</h1>
+    <div class="flex justify-center space-x-4 mb-8">
+      <button class="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition duration-300 shadow-md" data-modal-type="plan">添加计划</button>
+      <button class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition duration-300 shadow-md" data-modal-type="todo">添加待办</button>
+      <!-- <button class="bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition duration-300 shadow-md" data-modal-type="checkin">添加打卡</button> -->
+    </div>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">计划</h2>
+      <div id="plans-list" class="grid grid-cols-3 gap-6"></div>
+    </div>
+    <div class="mb-8">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">待办事项</h2>
+      <div id="todos-list" class="space-y-6"></div>
+    </div>
+    <div>
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">打卡</h2>
+      <div id="checkins-list" class="grid grid-cols-3 gap-6"></div>
+    </div>
+  </div>
+
+
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 backdrop overflow-y-auto p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md relative">
+      <!-- Modal header -->
+      <div class="p-6 border-b border-gray-200">
+        <h2 id="modal-title" class="text-2xl font-bold text-gray-800"></h2>
+      </div>
+      
+      <!-- Modal body with max height and scroll -->
+      <div class="p-6 max-h-[calc(90vh-8rem)] overflow-y-auto">
+        <input id="modal-name" placeholder="名称" class="w-full p-3 mb-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200">
+        <textarea id="modal-description" placeholder="描述" rows="4" class="w-full p-3 mb-4 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200"></textarea>
+        
+        <!-- Add image upload section -->
+        <div id="modal-image-group" class="mb-4 hidden">
+          <div class="flex items-center justify-center w-full">
+            <label class="w-full flex flex-col items-center px-4 py-6 bg-white rounded-lg border-2 border-dashed border-gray-300 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                <svg class="w-8 h-8 mb-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                <p class="mb-2 text-sm text-gray-500"><span class="font-semibold">点击上传图片</span></p>
+                <p class="text-xs text-gray-500">支持 PNG, JPG, JPEG 格式</p>
+              </div>
+              <input id="modal-image" type="file" class="hidden" accept="image/*" onchange="previewImage(this)"/>
+            </label>
+          </div>
+          <div class="image-preview mt-4 flex justify-center"></div>
+        </div>
+        
+        <div id="modal-deadline-group" class="space-y-4">
+          <input id="modal-deadline" type="datetime-local" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200">
+          <input id="modal-reminder-time" type="number" placeholder="提前提醒时间（小时）" class="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 transition duration-200">
+        </div>
+      </div>
+      
+      <!-- Modal footer -->
+      <div class="p-6 border-t border-gray-200">
+        <div class="flex space-x-4">
+          <button id="submitModal" class="flex-1 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-300 shadow-md">提交</button>
+          <button id="closeModal" class="flex-1 bg-gray-200 text-gray-700 p-3 rounded-lg hover:bg-gray-300 transition duration-200">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg hidden toast">
+    <span id="toast-message"></span>
+  </div>
+
+  <footer class="bg-gray-200 text-center p-4 mt-8">
+    © 2025 周密计划 | 高效规划，掌控未来
+  </footer>
+
+  <script type="module" defer src="static/planlist.js"></script>
+  <!-- <script type="module" src="/static/modalHandler.js"></script> -->
+  <script>
+  // Add image preview function
+  function previewImage(input) {
+    const preview = document.querySelector('.image-preview');
+    preview.innerHTML = '';
+    
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.className = 'max-h-48 rounded-lg shadow-sm';
+        
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 shadow-sm hover:bg-red-600 transition-colors';
+        removeBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+        removeBtn.onclick = function() {
+          preview.innerHTML = '';
+          input.value = '';
+        };
+        
+        const container = document.createElement('div');
+        container.className = 'relative inline-block';
+        container.appendChild(img);
+        container.appendChild(removeBtn);
+        preview.appendChild(container);
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+  </script>
+</body>
+</html>

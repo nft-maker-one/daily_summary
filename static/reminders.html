@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提醒设置</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <base href="/">
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeOutDown {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(20px); }
+    }
+    .modal-enter { animation: fadeInUp 0.3s ease-out forwards; }
+    .modal-exit { animation: fadeOutDown 0.3s ease-out forwards; }
+    .backdrop { backdrop-filter: blur(4px); }
+    .toast { animation: fadeInUp 0.3s ease-out, fadeOutDown 0.3s ease-out 2.7s; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 antialiased">
+  <nav class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <i class="fas fa-book-open text-2xl"></i>
+        <span class="text-xl font-bold">每日总结</span>
+      </div>
+      <div class="flex space-x-6">
+        <a href="/index.html" class="hover:text-blue-200 transition-colors duration-300 font-medium">生活总结</a>
+        <a href="/planlist.html" class="hover:text-blue-200 transition-colors duration-300 font-medium">周密计划</a>
+        <a href="/reminders.html" class="hover:text-blue-200 transition-colors duration-300 font-medium">提醒设置</a>
+        <div class="relative group">
+          <button id="login-btn" class="hover:text-blue-200 transition-colors duration-300 font-medium flex items-center">
+            个人中心
+            <i class="fas fa-chevron-down ml-2"></i>
+          </button>
+          <div class="absolute hidden group-hover:block bg-white text-gray-800 rounded-lg shadow-lg mt-2 w-48 z-10">
+            <a href="#" class="block px-4 py-2 hover:bg-blue-100 transition-colors">个人资料</a>
+            <a href="#" class="block px-4 py-2 hover:bg-blue-100 transition-colors">设置</a>
+            <a href="#" class="block px-4 py-2 hover:bg-blue-100 transition-colors">退出</a>
+          </div>
+        </div>
+        <span id="user-greeting" class="hidden font-medium text-blue-100"></span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto p-6 max-w-5xl">
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">提醒设置</h1>
+    <p class="text-gray-600 mb-6 text-lg">以下是所有计划和待办的提醒列表，可查看和管理即将到期的任务。</p>
+    <div id="reminders-list" class="space-y-6"></div>
+  </div>
+
+  <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg hidden toast">
+    <span id="toast-message"></span>
+  </div>
+
+  <footer class="bg-gray-200 text-center p-4 mt-8">
+    © 2025 提醒设置 | 高效规划，掌控未来
+  </footer>
+
+  <script>
+    let user = null;
+    let plans = [];
+    let todos = [];
+
+    // Initialize notification permissions
+    if (!("Notification" in window)) {
+      console.warn("浏览器不支持通知功能");
+    } else if (Notification.permission !== "granted") {
+      Notification.requestPermission().catch(err => console.error("通知权限请求失败:", err));
+    }
+
+    // Login handling
+    const loginBtn = document.getElementById('login-btn');
+    const greeting = document.getElementById('user-greeting');
+    if (user) {
+      loginBtn.classList.add('hidden');
+      greeting.textContent = `欢迎, ${user.name}`;
+      greeting.classList.remove('hidden');
+    }
+    loginBtn.addEventListener('click', () => {
+      user = { id: 1, name: '用户' };
+      loginBtn.classList.add('hidden');
+      greeting.textContent = `欢迎, ${user.name}`;
+      greeting.classList.remove('hidden');
+      showToast('登录成功');
+    });
+
+    // Toast notification
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+
+    // Backend fetching
+    async function fetchPlans() {
+      try {
+        const response = await fetch('http://api.example.com/api/plans');
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '后端错误');
+        }
+        return result.data;
+      } catch (err) {
+        console.error('获取 plans 失败:', err);
+        showToast('加载计划数据失败，将使用本地数据');
+        return [];
+      }
+    }
+
+    async function fetchTodos() {
+      try {
+        const response = await fetch('http://api.example.com/api/todos');
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || '后端错误');
+        }
+        return result.data;
+      } catch (err) {
+        console.error('获取 todos 失败:', err);
+        showToast('加载待办数据失败，将使用本地数据');
+        return [];
+      }
+    }
+
+    // Rendering reminders
+    function renderReminders() {
+      const list = document.getElementById('reminders-list');
+      list.innerHTML = '';
+      const items = [...plans, ...todos].filter(item => item.deadline);
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-gray-50 to-gray-100';
+        const title = document.createElement('h3');
+        title.className = 'text-lg font-semibold text-blue-600';
+        title.textContent = item.name;
+        const type = document.createElement('p');
+        type.className = 'text-sm text-gray-500';
+        type.textContent = `类型: ${item.reminders ? '计划' : '待办'}`;
+        const deadline = document.createElement('p');
+        deadline.className = 'text-sm text-gray-500 mt-2';
+        deadline.textContent = `截止: ${item.deadline}`;
+        const reminder = document.createElement('p');
+        reminder.className = 'text-sm text-gray-500 mt-2';
+        reminder.textContent = `提醒时间: ${item.reminderTime ? `${item.reminderTime}小时前` : '24小时前'}`;
+        div.appendChild(title);
+        div.appendChild(type);
+        div.appendChild(deadline);
+        div.appendChild(reminder);
+        list.appendChild(div);
+      });
+    }
+
+    // Initial render
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        plans = await fetchPlans();
+        todos = await fetchTodos();
+      } catch (err) {
+        // Errors already handled in fetch functions
+      }
+      renderReminders();
+    });
+  </script>
+</body>
+</html>
