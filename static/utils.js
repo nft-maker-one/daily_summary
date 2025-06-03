@@ -113,6 +113,18 @@ export function showImageModal(imageSrc) {
     imageModal.classList.add('flex');
 }
 
+// document.addEventListener('click',(e) => {
+//     const anchor = event.target.closest('a')
+//     if (anchor && anchor.href) {
+//         event.preventDefault()
+//         console.log('Before Navigation:',{
+//             from:window.location.href,
+//             to:anchor.href,
+//         })
+
+//     }
+// })
+
 // 导出其他工具函数
 // export default {
 //     loadSummaries,

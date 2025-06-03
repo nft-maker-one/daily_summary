@@ -14,6 +14,7 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var (
@@ -217,10 +218,14 @@ func setApi(g *gin.Engine) {
 		}
 		todo.UpdatedAt = time.Now()
 
-		if err := db.Create(&todo).Error; err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "创建新的待办事项失败 " + err.Error()})
+		if err := db.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			DoUpdates: clause.AssignmentColumns([]string{"name", "description", "deadline", "reminder_time", "completed", "updated_at"}),
+		}).Create(&todo).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "创建或者更新待办事项失败 " + err.Error()})
 			return
 		}
+
 		ctx.JSON(http.StatusOK, gin.H{"success": true, "data": todo})
 	})
 
@@ -278,10 +283,25 @@ func setApi(g *gin.Engine) {
 
 func main() {
 	r := gin.Default()
-	setApi(r)
-	// 静态文件服务，使用绝对路径
+
+	// 允许跨域
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+	// staticFS := http.FileServer(http.Dir(STATIC_DIR))
+	// http.Handle("/static/", http.StripPrefix("/static/", staticFS))
 	r.StaticFS("/uploads", http.Dir(IMAGE_DIR))
 	r.StaticFS("/static", http.Dir(STATIC_DIR))
+	setApi(r)
+	// 静态文件服务，使用绝对路径
 
 	// 设置前端入口
 	r.GET("/", func(c *gin.Context) {
@@ -291,18 +311,6 @@ func main() {
 	// 处理找不到的路由，返回前端入口
 	r.NoRoute(func(c *gin.Context) {
 		c.File(filepath.Join(STATIC_DIR, "index.html"))
-	})
-
-	// 允许跨域
-	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-		c.Next()
 	})
 
 	// 添加新总结
