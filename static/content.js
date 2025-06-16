@@ -1,6 +1,9 @@
 import config from '/static/config.js';
 import { loadSummaries } from '/static/utils.js';
 
+// 存储已上传的图片数据
+let uploadedImages = [];
+
 const contentInput = document.getElementById('content');
 const titleInput = document.getElementById('title');
 const addSummaryButton = document.getElementById('add-summary');
@@ -26,7 +29,7 @@ contentInput.addEventListener('focus', () => {
 addSummaryButton.addEventListener('click', async () => {
     const title = titleInput.value.trim();
     const content = contentInput.value.trim();
-    const images = imageUpload.files;
+    
 
     if (!title || !content) {
         alert('请填写标题和内容');
@@ -38,8 +41,8 @@ addSummaryButton.addEventListener('click', async () => {
     formData.append('content', content);
     
     // 添加图片文件
-    for (let i = 0; i < images.length; i++) {
-        formData.append('images', images[i]);
+    for (let i = 0; i < uploadedImages.length; i++) {
+        formData.append('images', uploadedImages[i].file);
     }
 
     try {
@@ -98,8 +101,7 @@ const modalImage = document.getElementById('modal-image');
 const closeModalPrePic = document.getElementById('close-modal-pre-pic');
 const imageUpload = document.getElementById('image-upload');
 
-// 存储已上传的图片数据
-let uploadedImages = [];
+
 
 // 处理图片上传和预览
 function handleImageUpload(event) {

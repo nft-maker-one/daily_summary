@@ -321,7 +321,7 @@ async function submitModal() {
         item.reminders = [];
         const savedPlan = await createOrUpdatePlan(item);
         plans = [...plans, { plan: savedPlan, check_ins: [] }];
-        scheduleReminder(savedPlan);
+        // scheduleReminder(savedPlan);
         renderPlans();
         showToast('计划添加成功');
       } else if (modalType === 'todo') {
@@ -329,7 +329,7 @@ async function submitModal() {
         const savedTodo = await createOrUpdateTodo(item);
         console.log('Saved todo:', savedTodo);
         todos.push(savedTodo);
-        scheduleReminder(savedTodo);
+        // scheduleReminder(savedTodo);
         renderTodos();
         showToast('待办添加成功');
       }
@@ -344,15 +344,16 @@ async function submitModal() {
 
 // Fix scheduleReminder
 function scheduleReminder(item) {
-  console.log("go into scheduleReminder", item);
+
   if (Notification.permission === 'granted' && item.deadline) {
     try {
       const now = new Date();
       const deadline = new Date(item.deadline);
-      const reminderTimeMs = (item.reminderTime || 24) * 60 * 60 * 1000;
-      const timeDiff = deadline - now - reminderTimeMs;
+      const reminderTimeMs = (item.reminderTime || 24) * 60 * 60 * 1000; // ms单位
+      const timeDiff = deadline - now;
       console.log('Reminder timeDiff:', timeDiff, 'deadline:', item.deadline);
-      if (timeDiff > 0) {
+      // <span class="text-blue-600 font-medium">${Math.round(progress)}% 完成</span>
+      if (timeDiff > 0 && timeDiff < reminderTimeMs) {
         setTimeout(() => {
           new Notification(`${item.name} 即将到期`, { body: `截止时间: ${item.deadline}` });
         }, timeDiff);
@@ -377,7 +378,11 @@ function renderPlans() {
     list.innerHTML = '<p class="text-gray-500">暂无计划</p>';
     return;
   }
-
+  plans = plans.sort((a,b) => {
+    const date1 = new Date(a.plan.updated_at)
+    const date2 = new Date(b.plan.updated_at)
+    return date2-date1
+  })
   plans.forEach(({plan, check_ins}) => {
     const div = document.createElement('div');
     div.className = 'bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-gray-50 to-gray-100 mb-4';
@@ -393,6 +398,8 @@ function renderPlans() {
     
     const desc = document.createElement('p');
     desc.className = 'text-gray-600';
+    desc.style.whiteSpace = 'normal'
+    desc.style.wordBreak = 'break-word'
     desc.textContent = plan.description || '无描述';
     
     contentDiv.appendChild(title);
@@ -429,7 +436,7 @@ function renderPlans() {
     const end = new Date(plan.deadline);
     const totalDuration = end - start;
     const elapsed = now - start;
-    const progress = Math.min(Math.max(0, (elapsed / totalDuration) * 100), 100);
+    const progress = 100-Math.min(Math.max(0, (elapsed / totalDuration) * 100), 100);
     
     // Time info
     const timeInfo = document.createElement('div');
@@ -447,14 +454,15 @@ function renderPlans() {
     // Progress bar
     const progressBar = document.createElement('div');
     progressBar.className = 'mt-2';
+    // <span class="text-blue-600 font-medium">${Math.round(progress)}% 完成</span>
     progressBar.innerHTML = `
       <div class="flex justify-between text-sm mb-1">
-        <span class="text-blue-600 font-medium">${Math.round(progress)}% 完成</span>
+        
         <span class="text-gray-500">${Math.ceil((end - now) / (1000 * 60 * 60 * 24))} 天剩余</span>
       </div>
       <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
         <div class="h-full transition-all duration-500 ${
-          progress < 50 ? 'bg-green-500' : progress < 75 ? 'bg-yellow-500' : 'bg-red-500'
+          progress > 75 ? 'bg-green-500' : progress > 25 ? 'bg-yellow-500' : 'bg-red-500'
         }" style="width: ${progress}%"></div>
       </div>
     `;
@@ -621,8 +629,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     // Errors handled in fetch functions
   }
+  
   renderPlans();
   renderTodos();
+  if (plans) {
+    plans.forEach(({plan}) => {
+      scheduleReminder(plan)
+    })
+  }
+  
 
   const addButtons = document.querySelectorAll('button[data-modal-type]');
 
